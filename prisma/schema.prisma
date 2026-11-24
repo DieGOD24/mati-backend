@@ -1,0 +1,74 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Usuario {
+  id             String    @id @default(uuid())
+  nombre         String
+  correo         String    @unique
+  contrasenaHash String
+  rol            String    @default("usuario")
+  esDemo         Boolean   @default(false)
+  tipoDemo       String?
+  creadoEn       DateTime  @default(now())
+  actualizadoEn  DateTime  @updatedAt
+  materas        Matera[]
+
+  @@map("usuarios")
+}
+
+model Matera {
+  id              String      @id @default(uuid())
+  nombre          String
+  especie         String      @default("potus")
+  ubicacion       String      @default("Sala")
+  codigo          String      @unique
+  usuarioId       String
+  usuario         Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  umbralHumedad   Float       @default(40.0)
+  riegoAutomatico Boolean     @default(true)
+  segundosRiego   Int         @default(5)
+  creadoEn        DateTime    @default(now())
+  actualizadoEn   DateTime    @updatedAt
+  mediciones      Medicion[]
+  alertas         Alerta[]
+
+  @@map("materas")
+}
+
+model Medicion {
+  id         String   @id @default(uuid())
+  materaId   String
+  matera     Matera   @relation(fields: [materaId], references: [id], onDelete: Cascade)
+  humedad    Float
+  ph         Float
+  lux        Float
+  tanque     Float
+  cara       String   @default("feliz")
+  fueRiego   Boolean  @default(false)
+  creadoEn   DateTime @default(now())
+
+  @@index([materaId, creadoEn])
+  @@map("mediciones")
+}
+
+model Alerta {
+  id         String    @id @default(uuid())
+  materaId   String
+  matera     Matera    @relation(fields: [materaId], references: [id], onDelete: Cascade)
+  tipo       String
+  titulo     String
+  detalle    String
+  activa     Boolean   @default(true)
+  vista      Boolean   @default(false)
+  creadoEn   DateTime  @default(now())
+  resueltaEn DateTime?
+
+  @@index([materaId, activa])
+  @@map("alertas")
+}
